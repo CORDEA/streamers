@@ -14,7 +14,10 @@ actor Main
         _Get(env, url)
 
 actor _Get
+    let _env: Env
+
     new create(env: Env, url: URL) =>
+        _env = env
         let sslctl = try
             recover
                 SSLContext
@@ -25,7 +28,7 @@ actor _Get
 
         try
             let client = HTTPClient(env.root as AmbientAuth, consume sslctl)
-            let dumpMaker = recover val NotifyFactory.create() end
+            let dumpMaker = recover val NotifyFactory(this) end
             let req = Payload.request("GET", url)
             req("User-Agent") = "Pony httpget"
 
@@ -34,15 +37,34 @@ actor _Get
             env.exitcode(1)
         end
 
+    be receive(response: Payload val) =>
+        _env.out.print(response.status.string())
+
+        try
+            for b in response.body()?.values() do
+                _env.out.print(b)
+            end
+        end
+
 class NotifyFactory is HandlerFactory
+    let _get: _Get
+
+    new create(get: _Get) =>
+        _get = get
+
     fun apply(session: HTTPSession): HTTPHandler ref^ =>
-        HttpNotify(session)
+        HttpNotify(_get, session)
 
 class HttpNotify is HTTPHandler
+    let _get: _Get
     let _session: HTTPSession
 
-    new create(session: HTTPSession) =>
+    new create(get: _Get, session: HTTPSession) =>
         _session = session
+        _get = get
+
+    fun apply(response: Payload val) =>
+        _get.receive(response)
 
     fun finished() =>
         _session.dispose()
