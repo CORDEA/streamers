@@ -33,6 +33,8 @@ actor _Get
             let dumpMaker = recover val NotifyFactory(this) end
             let req = Payload.request("GET", url)
             req("User-Agent") = "Pony httpget"
+            req("Accept") = "application/vnd.twitchtv.v5+json"
+            req("Client-ID") = ""
 
             let sentreq = client(consume req, dumpMaker)?
         else
