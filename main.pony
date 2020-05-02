@@ -2,7 +2,7 @@ use "http"
 use "files"
 use "net_ssl"
 
-primitive BaseUrl fun apply() => "https://api.twitch.tv/kraken"
+primitive BaseUrl fun apply(): String => "https://api.twitch.tv/kraken"
 
 actor Main
     new create(env: Env) =>
