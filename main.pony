@@ -26,8 +26,10 @@ actor _Get
         try
             let client = HTTPClient(env.root as AmbientAuth, consume sslctl)
             let dumpMaker = recover val NotifyFactory.create() end
-            // TODO
-            /* let sentreq = client(consume req, dumpMaker)? */
+            let req = Payload.request("GET", url)
+            req("User-Agent") = "Pony httpget"
+
+            let sentreq = client(consume req, dumpMaker)?
         else
             env.exitcode(1)
         end
