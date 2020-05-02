@@ -122,12 +122,19 @@ actor _Get
                 end
             end
 
-        let json = try
-            JsonDoc.parse(strBody)?
+        let userId = try
+            let doc = JsonDoc
+            doc.parse(strBody)?
+            let jsonObject = doc.data as JsonObject
+            let users = jsonObject.data("users")? as JsonArray
+            let user = users.data(0)? as JsonObject
+            user.data("_id")? as String
         else
             _env.exitcode(1)
             return
         end
+
+        _env.out.print(userId)
 
 class NotifyFactory is HandlerFactory
     let _get: _Get
