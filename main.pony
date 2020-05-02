@@ -1,5 +1,6 @@
 use "cli"
 use "http"
+use "json"
 use "files"
 use "net_ssl"
 
@@ -109,13 +110,24 @@ actor _Get
             end
         end
 
-        match body
-        | None =>
+        let strBody =
+            match body
+            | None =>
+                _env.exitcode(1)
+                return
+            | let bs: ByteSeq =>
+                match bs
+                | let str: String => str
+                | let arr: Array[U8 val] val => String.from_array(arr)
+                end
+            end
+
+        let json = try
+            JsonDoc.parse(strBody)?
+        else
             _env.exitcode(1)
             return
-        | let bs: ByteSeq => _env.out.print(bs)
         end
-
 
 class NotifyFactory is HandlerFactory
     let _get: _Get
