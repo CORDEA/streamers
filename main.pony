@@ -1,3 +1,4 @@
+use "cli"
 use "http"
 use "files"
 use "net_ssl"
@@ -13,12 +14,18 @@ actor Main
             return
         end
 
-        _Get(env, url)
+        let clientId = try
+            EnvVars(env.vars)("TWITCH_CLIENT_ID")?
+        else
+            env.exitcode(1)
+            return
+        end
+        _Get(env, url, clientId)
 
 actor _Get
     let _env: Env
 
-    new create(env: Env, url: URL) =>
+    new create(env: Env, url: URL, clientId: String) =>
         _env = env
         let sslctl = try
             recover
@@ -34,7 +41,7 @@ actor _Get
             let req = Payload.request("GET", url)
             req("User-Agent") = "Pony httpget"
             req("Accept") = "application/vnd.twitchtv.v5+json"
-            req("Client-ID") = ""
+            req("Client-ID") = clientId
 
             let sentreq = client(consume req, dumpMaker)?
         else
