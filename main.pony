@@ -95,12 +95,27 @@ actor _Get
 
     be receive(response: Payload val) =>
         _env.out.print(response.status.string())
+        if not response.status == 200 then
+            _env.exitcode(1)
+        end
 
-        try
+        let body = try
             for b in response.body()?.values() do
-                _env.out.print(b)
+                if b.size() > 0 then
+                    b
+                else
+                    continue
+                end
             end
         end
+
+        match body
+        | None =>
+            _env.exitcode(1)
+            return
+        | let bs: ByteSeq => _env.out.print(bs)
+        end
+
 
 class NotifyFactory is HandlerFactory
     let _get: _Get
