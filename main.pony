@@ -7,10 +7,35 @@ primitive BaseUrl fun apply(): String => "https://api.twitch.tv/kraken"
 
 actor Main
     new create(env: Env) =>
+        let command = try
+            CommandSpec.leaf("streamers", "", [], [
+                ArgSpec.string_seq("users", "Username")
+            ])?.>add_help()?
+        else
+            env.exitcode(1)
+            return
+        end
+
+        let parsed =
+            match CommandParser(command).parse(env.args, env.vars)
+            | let cmd: Command => cmd
+            | let ch: CommandHelp =>
+                ch.print_help(env.out)
+                env.exitcode(0)
+                return
+            | let err: SyntaxError =>
+                env.out.print(err.string())
+                env.exitcode(1)
+                return
+            end
+
+        let users = parsed.arg("users").string_seq()
         let url = try
-            UrlBuilder(BaseUrl)
-                .login("")
-                .build()?
+            let builder = UrlBuilder(BaseUrl)
+            for user in users.values() do
+                builder.login(user)
+            end
+            builder.build()?
         else
             env.exitcode(1)
             return
