@@ -2,10 +2,12 @@ use "http"
 use "files"
 use "net_ssl"
 
+primitive BaseUrl fun apply() => "https://api.twitch.tv/kraken"
+
 actor Main
     new create(env: Env) =>
         let url = try
-            URL.valid("")?
+            URL.valid(BaseUrl() + "/users")?
         else
             env.exitcode(1)
             return
