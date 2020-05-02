@@ -8,7 +8,9 @@ primitive BaseUrl fun apply(): String => "https://api.twitch.tv/kraken"
 actor Main
     new create(env: Env) =>
         let url = try
-            URL.valid(BaseUrl() + "/users")?
+            UrlBuilder(BaseUrl)
+                .login("")
+                .build()?
         else
             env.exitcode(1)
             return
@@ -21,6 +23,24 @@ actor Main
             return
         end
         _Get(env, url, clientId)
+
+class UrlBuilder
+    let _baseUrl: String
+    var _url: String
+
+    new create(baseUrl: BaseUrl) =>
+        _baseUrl = baseUrl() + "/users"
+        _url = _baseUrl
+
+    fun ref login(login': String): UrlBuilder =>
+        if _baseUrl == _url then
+            _url = _url + "?login=" + login'
+        else
+            _url = _url + "," + login'
+        end
+        this
+
+    fun build(): URL ? => URL.valid(_url)?
 
 actor _Get
     let _env: Env
