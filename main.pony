@@ -48,7 +48,7 @@ actor Main
             env.exitcode(1)
             return
         end
-        _Get(env, url, clientId)
+        _Get(env, url, clientId, _UserIdHandler(env))
 
 class UrlBuilder
     let _baseUrl: String
@@ -68,11 +68,33 @@ class UrlBuilder
 
     fun build(): URL ? => URL.valid(_url)?
 
-actor _Get
+class _UserIdHandler
     let _env: Env
 
-    new create(env: Env, url: URL, clientId: String) =>
+    new val create(env: Env) =>
         _env = env
+
+    fun box apply(jsonObject: JsonObject) =>
+        try
+            let users = jsonObject.data("users")? as JsonArray
+            let user = users.data(0)? as JsonObject
+            _env.out.print(user.data("_id")? as String)
+        else
+            _env.exitcode(1)
+        end
+
+actor _Get
+    let _env: Env
+    let _fetchedIds: {(JsonObject)} val
+
+    new create(
+        env: Env,
+        url: URL,
+        clientId: String,
+        fetchedIds: {(JsonObject)} val
+    ) =>
+        _env = env
+        _fetchedIds = fetchedIds
         let sslctl = try
             recover
                 SSLContext
@@ -122,19 +144,15 @@ actor _Get
                 end
             end
 
-        let userId = try
+        try
             let doc = JsonDoc
             doc.parse(strBody)?
             let jsonObject = doc.data as JsonObject
-            let users = jsonObject.data("users")? as JsonArray
-            let user = users.data(0)? as JsonObject
-            user.data("_id")? as String
+            _fetchedIds(jsonObject)
         else
             _env.exitcode(1)
             return
         end
-
-        _env.out.print(userId)
 
 class NotifyFactory is HandlerFactory
     let _get: _Get
